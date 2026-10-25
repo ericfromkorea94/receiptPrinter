@@ -123,7 +123,9 @@ body {
   gap: 20px;
   padding: 24px 28px;
   flex: 1;
-  align-items: start;
+  /* Backlog / In Progress / Done stretch to a shared row height; the Print
+     column opts out below so its form stays content-sized. */
+  align-items: stretch;
 }
 
 @media (max-width: 768px) {
@@ -138,7 +140,11 @@ body {
   border-radius: 16px;
   box-shadow: 0 2px 12px rgba(0,0,0,.06);
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
+
+.column.print-column { align-self: start; }
 
 .col-header {
   display: flex;
@@ -179,7 +185,13 @@ body {
 
 .col-body {
   padding: 16px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
 }
+
+.print-column .col-body { display: block; flex: none; }
 
 /* ── Print column inputs ──────────────────────── */
 .print-col input {
@@ -236,6 +248,11 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  /* flex:1 fills the stretched column so short lists match the tallest one and
+     the empty space stays a valid drag drop target. The 60vh cap only applies
+     to the stacked mobile layout; desktop lifts it above. */
+  flex: 1;
+  min-height: 0;
   max-height: 60vh;
   overflow-y: auto;
 }
@@ -251,11 +268,11 @@ body {
 }
 
 #backlog-list .job-item {
-  background: #fff8e1;
+  background: hsl(45, 52%, 94%);
 }
 
 #progress-list .job-item {
-  background: hsl(145, 40%, 93%);
+  background: hsl(145, 22%, 93%);
 }
 
 #done-list .job-item {
@@ -271,9 +288,9 @@ body {
 }
 /* Color by Jira issue type: task = print-icon blue, subtask = green */
 #backlog-list .job-item.type-task,
-#progress-list .job-item.type-task    { background: #e8f0fe; }
+#progress-list .job-item.type-task    { background: hsl(218, 48%, 95%); }
 #backlog-list .job-item.type-subtask,
-#progress-list .job-item.type-subtask { background: hsl(145, 45%, 90%); }
+#progress-list .job-item.type-subtask { background: hsl(145, 24%, 90%); }
 #backlog-list .job-item:active,
 #progress-list .job-item:active,
 #done-list .job-item:active { cursor: grabbing; }
@@ -407,3 +424,14 @@ body {
 /* ── Animations ───────────────────────────────── */
 @keyframes fadein  { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
 @keyframes slideup { from { opacity:0; transform:translateY(16px); } to { opacity:1; transform:none; } }
+
+/* Desktop: pin the board to the viewport so every column is exactly as tall as
+   the space available and its list scrolls inside it — otherwise the column
+   stretches to the viewport while the list stops at its own cap, leaving dead
+   space below a clipped list. Mobile stacks the columns, so it keeps the cap
+   and lets the page scroll instead. */
+@media (min-width: 769px) {
+  #app { height: 100vh; overflow: hidden; }
+  .board { min-height: 0; grid-template-rows: minmax(0, 1fr); }
+  .job-list { max-height: none; }
+}

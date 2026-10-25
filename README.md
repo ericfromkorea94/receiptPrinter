@@ -1,4 +1,4 @@
-# Printer
+# Jira Manage
 
 USB 열영수증 프린터와 Jira를 연동한 웹 기반 태스크 관리 앱.
 
@@ -45,7 +45,7 @@ cp be/.env.example be/.env
 | `SECRET_KEY` | JWT 서명용 랜덤 문자열 |
 | `GOOGLE_CLIENT_ID` | Google OAuth 클라이언트 ID |
 | `GOOGLE_CLIENT_SECRET` | Google OAuth 클라이언트 시크릿 |
-| `REDIRECT_URI` | OAuth 콜백 URL (예: `https://your-domain.com/auth/callback`) |
+| `REDIRECT_URI` | OAuth 콜백 URL (`https://utility.ericfromkorea.com/jira-manage/auth/callback`) |
 
 > Jira 설정은 환경 변수 대신 `/settings` 페이지에서 사용자별로 입력합니다.
 
@@ -61,49 +61,26 @@ docker compose up -d
 
 ## 빌드 및 배포
 
-### 운영 인프라 구조
+### 운영 주소와 라우팅
 
-```
-인터넷
-  └─ print.ericfromkorea.com (DNS)
-       └─ 공유기 포트포워딩  WAN 80/443 → 192.168.1.121 80/443
-            └─ 시스템 nginx  (/etc/nginx/sites-enabled/print.ericfromkorea.com)
-                 ├─ HTTP(80)  → 301 HTTPS 리다이렉트
-                 └─ HTTPS(443) SSL 종료 (Let's Encrypt)
-                      └─ proxy_pass → http://localhost:60021
-                           └─ Docker: fe 컨테이너 (nginx:alpine, 60021:80)
-                                └─ proxy → be:8000 (FastAPI)
-                                     └─ db:5432 (PostgreSQL)
-```
+- 서비스: https://utility.ericfromkorea.com/jira-manage/
+- Google 승인된 리디렉션 URI: https://utility.ericfromkorea.com/jira-manage/auth/callback
+- JavaScript 원본(필요 시): https://utility.ericfromkorea.com
+- 프로젝트: `/home/son/prj/jira-manage`, Compose 프로젝트 이름: `jira-manage`
 
-### 시스템 nginx 설정
+시스템 Nginx의 `/etc/nginx/snippets/consolidated-utility.conf`가
+`/jira-manage/`를 내부 라우터 `127.0.0.1:18106`으로 전달하고,
+내부 라우터는 프런트엔드 `127.0.0.1:60021`에 연결합니다.
+프런트엔드 컨테이너가 정적 파일과 백엔드 `be:8000` 프록시를 제공합니다.
+공개 경로의 링크·쿠키·리디렉션은 시스템 Nginx에서 접두사를 붙입니다.
 
-파일: `/etc/nginx/sites-enabled/print.ericfromkorea.com`
+아래 문서의 `/print`, `/api/print` 등은 앱 내부의 인쇄 기능 경로입니다.
+실제 공개 경로에는 `/jira-manage`를 앞에 붙입니다.
+기존 `/print/` 접속과 옛 서브도메인은 호환용 리디렉션으로 남아 있습니다.
 
-```nginx
-server {
-    listen 80;
-    server_name print.ericfromkorea.com;
-    return 301 https://$host$request_uri;
-}
-
-server {
-    listen 443 ssl;
-    server_name print.ericfromkorea.com;
-
-    ssl_certificate     /etc/letsencrypt/live/print.ericfromkorea.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/print.ericfromkorea.com/privkey.pem;
-
-    location / {
-        proxy_pass http://localhost:60021;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-    }
-}
-```
-
-SSL 인증서 갱신: `certbot renew` (Let's Encrypt, 자동 갱신 권장)
+컨테이너는 `jira-manage-fe-1`, `jira-manage-be-1`, `jira-manage-db-1`입니다.
+기존 데이터 보존을 위해 외부 볼륨 `printer_pgdata`와 DB 이름/사용자 `printer`는
+유지합니다. `docker compose down -v`로도 이 외부 볼륨은 삭제되지 않습니다.
 
 ### 컨테이너 구성
 
@@ -126,7 +103,7 @@ SSL 인증서 갱신: `certbot renew` (Let's Encrypt, 자동 갱신 권장)
 ### 빌드 및 재기동
 
 ```bash
-cd /home/son/prj/printer
+cd /home/son/prj/jira-manage
 
 # 코드 업데이트 후 재빌드·재기동
 git pull

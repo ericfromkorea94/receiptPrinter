@@ -2,7 +2,7 @@
 
 ## 개요
 
-Printer 앱은 두 개의 핵심 도메인으로 구성됩니다.
+Jira Manage 앱은 두 개의 핵심 도메인으로 구성됩니다.
 
 - **Print 도메인**: 할 일을 물리적으로 출력하고, 진행 중 / 완료 상태를 추적
 - **Task 도메인**: Jira와 연동된 에픽 / 태스크 / 서브태스크 계층 구조를 관리
@@ -139,12 +139,12 @@ FastAPI 엔드포인트 (/jira/*)
 
 서브페이지 (print, manage_task, ...)
   └─ initSubPageAuth(path)
-       ├─ 토큰 없음 → localStorage[auth_redirect]=path → / 리다이렉트
+       ├─ 토큰 없음 → localStorage[jira_manage_auth_redirect]=path → / 리다이렉트
        └─ 토큰 있음 → #app 표시
 
 /auth/callback
   └─ JWT 발급 → /?token={jwt}
-       └─ initAuth() → 토큰 저장 → localStorage[auth_redirect] 있으면 복귀
+       └─ initAuth() → 토큰 저장 → localStorage[jira_manage_auth_redirect] 있으면 복귀
 ```
 
 ---

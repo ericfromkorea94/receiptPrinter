@@ -15,7 +15,7 @@ const TAG = `lifecycle-${Date.now()}`;
 // ── DB 헬퍼 ──────────────────────────────────────
 function dbExec(sql) {
   return execSync(
-    `docker exec printer-db-1 psql -U printer -d printer -t -A -c "${sql}"`
+    `docker exec jira-manage-db-1 psql -U printer -d printer -t -A -c "${sql}"`
   ).toString().trim();
 }
 

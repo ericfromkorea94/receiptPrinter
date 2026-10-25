@@ -1,5 +1,15 @@
-const AUTH_KEY     = 'auth_token';
-const REDIRECT_KEY = 'auth_redirect';
+const AUTH_KEY     = 'jira_manage_auth_token';
+const REDIRECT_KEY = 'jira_manage_auth_redirect';
+
+// Preserve browser sessions from the previous public /print mount.
+for (const [oldKey, newKey] of [
+  ['print_auth_token', AUTH_KEY],
+  ['print_auth_redirect', REDIRECT_KEY],
+]) {
+  const value = localStorage.getItem(oldKey);
+  if (value && !localStorage.getItem(newKey)) localStorage.setItem(newKey, value);
+  localStorage.removeItem(oldKey);
+}
 
 function getToken()   { return localStorage.getItem(AUTH_KEY); }
 function saveToken(t) { localStorage.setItem(AUTH_KEY, t); }

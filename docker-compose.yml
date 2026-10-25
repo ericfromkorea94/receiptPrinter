@@ -1,3 +1,5 @@
+name: jira-manage
+
 services:
   db:
     image: postgres:16-alpine
@@ -44,3 +46,6 @@ services:
 
 volumes:
   pgdata:
+    # Existing production database; project rename must not initialize a new DB.
+    external: true
+    name: printer_pgdata

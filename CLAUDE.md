@@ -1,4 +1,4 @@
-# Printer 프로젝트 지침
+# Jira Manage 프로젝트 지침
 
 ## 빌드 규칙
 

@@ -316,12 +316,18 @@ def history(user=Depends(require_auth)):
     with get_db() as conn:
         with conn.cursor(cursor_factory=RealDictCursor) as cur:
             cur.execute(
-                "SELECT id, title, status, jira_type,"
+                # sort_order is a per-status sequence, so a single global LIMIT
+                # lets one status (usually 'done') crowd the others out of the
+                # result. Rank within each status and cap each one separately.
+                "SELECT id, title, status, jira_type, printed_at, completed_at FROM ("
+                " SELECT id, title, status, jira_type, sort_order, printed_at AS printed_ts,"
                 " to_char(printed_at AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD HH24:MI') AS printed_at,"
-                " to_char(completed_at AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD HH24:MI') AS completed_at"
+                " to_char(completed_at AT TIME ZONE 'Asia/Seoul', 'YYYY-MM-DD HH24:MI') AS completed_at,"
+                " row_number() OVER (PARTITION BY status"
+                "  ORDER BY sort_order ASC NULLS LAST, printed_at DESC) AS rn"
                 " FROM print_jobs WHERE printed_by = %s"
-                " ORDER BY sort_order ASC NULLS LAST,"
-                " printed_at DESC LIMIT 100",
+                ") t WHERE rn <= 100"
+                " ORDER BY sort_order ASC NULLS LAST, printed_ts DESC",
                 (user["email"],),
             )
             rows = cur.fetchall()

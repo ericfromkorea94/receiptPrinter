@@ -1,6 +1,11 @@
 const crypto = require('crypto');
 
-const SECRET_KEY = '0684d5a809d932da47140ee34102c260e95c79a98c371425c5abd77e7e7d338b';
+const fs = require('fs');
+const path = require('path');
+const envText = fs.readFileSync(path.join(__dirname, '../../be/.env'), 'utf8');
+const match = envText.match(/^SECRET_KEY=(.*)$/m);
+const SECRET_KEY = process.env.SECRET_KEY || (match && match[1].trim().replace(/^['"]|['"]$/g, ''));
+if (!SECRET_KEY) throw new Error('SECRET_KEY is required for local E2E tests');
 const TEST_EMAIL = 'test@example.com';
 const TEST_NAME  = 'Test User';
 
@@ -27,7 +32,7 @@ function makeJwt(payload = {}) {
 async function loginAs(page, payload = {}) {
   const token = makeJwt(payload);
   await page.addInitScript((t) => {
-    localStorage.setItem('auth_token', t);
+    localStorage.setItem('jira_manage_auth_token', t);
   }, token);
 }
 
